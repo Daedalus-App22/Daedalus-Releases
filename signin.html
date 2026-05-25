@@ -1,0 +1,523 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Sign In — Daedalus</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+		<style>
+			:root {
+				--navy: #14213D;
+				--blue: #2F6CFF;
+				--citrine: #F6D84A;
+				--light-bg: #F5F7FB;
+				--text-dark: #14213D;
+				--text-mid: #3D4F6B;
+				--text-light: #6B7A99;
+				--white: #FFFFFF;
+				--border: #DDE3EF;
+				--error: #DC2626;
+				--success: #16A34A;
+			}
+
+			* { box-sizing: border-box; margin: 0; padding: 0; }
+
+			body {
+				font-family: 'Inter', sans-serif;
+				background: var(--light-bg);
+				color: var(--text-dark);
+				min-height: 100vh;
+				display: flex;
+				flex-direction: column;
+			}
+
+			header {
+				background: var(--navy);
+				padding: 1.2rem 2rem;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+			}
+
+			.logo {
+				font-family: 'Archivo', sans-serif;
+				font-size: 1.3rem;
+				font-weight: 800;
+				color: var(--white);
+				text-decoration: none;
+				letter-spacing: -0.035em;
+			}
+
+			header a.back {
+				font-size: 0.85rem;
+				color: rgba(255,255,255,0.6);
+				text-decoration: none;
+				transition: color 0.2s;
+			}
+
+			header a.back:hover { color: var(--white); }
+
+			main {
+				flex: 1;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 4rem 2rem;
+			}
+
+			.form-card {
+				background: var(--white);
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				padding: 2.5rem;
+				width: 100%;
+				max-width: 420px;
+			}
+
+			.form-card h2 {
+				font-family: 'Archivo', sans-serif;
+				font-size: 1.2rem;
+				font-weight: 800;
+				color: var(--navy);
+				letter-spacing: -0.03em;
+				margin-bottom: 0.4rem;
+			}
+
+			.form-card p.form-sub {
+				font-size: 0.88rem;
+				color: var(--text-light);
+				margin-bottom: 1.8rem;
+				line-height: 1.5;
+			}
+
+			.form-group { margin-bottom: 1.2rem; }
+
+			label {
+				display: block;
+				font-size: 0.82rem;
+				font-weight: 600;
+				color: var(--text-dark);
+				margin-bottom: 0.4rem;
+			}
+
+			input[type="email"],
+			input[type="password"] {
+				width: 100%;
+				padding: 0.75rem 1rem;
+				border: 1px solid var(--border);
+				border-radius: 4px;
+				font-size: 0.92rem;
+				font-family: 'Inter', sans-serif;
+				color: var(--text-dark);
+				background: var(--white);
+				transition: border-color 0.2s, box-shadow 0.2s;
+				outline: none;
+			}
+
+			input:focus {
+				border-color: var(--blue);
+				box-shadow: 0 0 0 3px rgba(47,108,255,0.1);
+			}
+
+			input.error-field { border-color: var(--error); }
+
+			.field-error {
+				font-size: 0.78rem;
+				color: var(--error);
+				margin-top: 0.35rem;
+				display: none;
+			}
+
+			.field-error.visible { display: block; }
+
+			.forgot-link {
+				display: block;
+				text-align: right;
+				font-size: 0.8rem;
+				color: var(--blue);
+				text-decoration: none;
+				margin-top: 0.35rem;
+			}
+
+			.forgot-link:hover { text-decoration: underline; }
+
+			.alert {
+				padding: 0.85rem 1rem;
+				border-radius: 4px;
+				font-size: 0.88rem;
+				margin-bottom: 1.2rem;
+				display: none;
+				line-height: 1.5;
+			}
+
+			.alert.error {
+				background: #FEF2F2;
+				border: 1px solid #FECACA;
+				color: var(--error);
+				display: block;
+			}
+
+			.alert.success {
+				background: #F0FDF4;
+				border: 1px solid #BBF7D0;
+				color: var(--success);
+				display: block;
+			}
+
+			.btn-submit {
+				width: 100%;
+				padding: 0.95rem;
+				background: var(--blue);
+				color: var(--white);
+				border: none;
+				border-radius: 4px;
+				font-size: 1rem;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				cursor: pointer;
+				transition: background 0.2s;
+				margin-top: 0.5rem;
+			}
+
+			.btn-submit:hover { background: #1a55ee; }
+			.btn-submit:disabled { background: #93AFFF; cursor: not-allowed; }
+
+			.divider {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				margin: 1.5rem 0;
+			}
+
+			.divider hr {
+				flex: 1;
+				border: none;
+				border-top: 1px solid var(--border);
+			}
+
+			.divider span {
+				font-size: 0.78rem;
+				color: var(--text-light);
+				white-space: nowrap;
+			}
+
+			.bottom-link {
+				text-align: center;
+				font-size: 0.85rem;
+				color: var(--text-light);
+			}
+
+			.bottom-link a {
+				color: var(--blue);
+				font-weight: 500;
+				text-decoration: none;
+			}
+
+			.bottom-link a:hover { text-decoration: underline; }
+
+			/* Success / download state */
+			#download-state {
+				display: none;
+				text-align: center;
+			}
+
+			#download-state .success-icon {
+				width: 56px;
+				height: 56px;
+				background: rgba(47,108,255,0.1);
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: 0 auto 1.5rem;
+				font-size: 1.4rem;
+				color: var(--blue);
+			}
+
+			#download-state h3 {
+				font-family: 'Archivo', sans-serif;
+				font-size: 1.3rem;
+				font-weight: 800;
+				color: var(--navy);
+				letter-spacing: -0.03em;
+				margin-bottom: 0.75rem;
+			}
+
+			#download-state p {
+				font-size: 0.92rem;
+				color: var(--text-mid);
+				line-height: 1.7;
+				margin-bottom: 1.5rem;
+			}
+
+			.btn-download {
+				display: inline-block;
+				background: var(--blue);
+				color: var(--white);
+				padding: 0.95rem 2.5rem;
+				border-radius: 4px;
+				font-size: 1rem;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				text-decoration: none;
+				transition: background 0.2s;
+			}
+
+			.btn-download:hover { background: #1a55ee; }
+
+			/* Reset password state */
+			#reset-state {
+				display: none;
+			}
+
+			#reset-state h2 {
+				font-family: 'Archivo', sans-serif;
+				font-size: 1.2rem;
+				font-weight: 800;
+				color: var(--navy);
+				letter-spacing: -0.03em;
+				margin-bottom: 0.4rem;
+			}
+
+			#reset-state p.form-sub {
+				font-size: 0.88rem;
+				color: var(--text-light);
+				margin-bottom: 1.8rem;
+				line-height: 1.5;
+			}
+
+			footer {
+				background: var(--navy);
+				padding: 1.5rem 2rem;
+				text-align: center;
+			}
+
+			footer p {
+				font-size: 0.82rem;
+				color: rgba(255,255,255,0.3);
+			}
+
+			footer a { color: rgba(255,255,255,0.4); text-decoration: none; }
+			footer a:hover { color: rgba(255,255,255,0.7); }
+		</style>
+	</head>
+	<body>
+
+		<header>
+			<a href="index.html" class="logo">Daedalus</a>
+			<a href="index.html" class="back">← Back to site</a>
+		</header>
+
+		<main>
+			<div class="form-card">
+
+				<!-- Sign in form -->
+				<div id="signin-state">
+					<h2>Sign in to your account</h2>
+					<p class="form-sub">Sign in to access your download.</p>
+
+					<div id="alert-box" class="alert"></div>
+
+					<div class="form-group">
+						<label for="email">Email address</label>
+						<input type="email" id="email" placeholder="Email address" autocomplete="email" />
+						<div class="field-error" id="email-error">Please enter a valid email address.</div>
+					</div>
+
+					<div class="form-group">
+						<label for="password">Password</label>
+						<input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+						<div class="field-error" id="password-error">Please enter your password.</div>
+						<a href="#" class="forgot-link" onclick="showReset(); return false;">Forgot your password?</a>
+					</div>
+
+					<button class="btn-submit" id="submit-btn" onclick="handleSignin()">Sign in</button>
+
+					<div class="divider"><hr><span>Don't have an account?</span><hr></div>
+					<div class="bottom-link"><a href="download.html">Create an account</a></div>
+				</div>
+
+				<!-- Password reset form -->
+				<div id="reset-state">
+					<h2>Reset your password</h2>
+					<p class="form-sub">Enter your email address and we'll send you a link to reset your password.</p>
+
+					<div id="reset-alert" class="alert"></div>
+
+					<div class="form-group">
+						<label for="reset-email">Email address</label>
+						<input type="email" id="reset-email" placeholder="Email address" autocomplete="email" />
+						<div class="field-error" id="reset-email-error">Please enter a valid email address.</div>
+					</div>
+
+					<button class="btn-submit" id="reset-btn" onclick="handleReset()">Send reset link</button>
+
+					<div class="divider"><hr><span>Remembered it?</span><hr></div>
+					<div class="bottom-link"><a href="#" onclick="showSignin(); return false;">Back to sign in</a></div>
+				</div>
+
+				<!-- Download state shown after successful sign in -->
+				<div id="download-state">
+					<div class="success-icon">&#10003;</div>
+					<h3>You're signed in.</h3>
+					<p>Click below to download Daedalus. Install it, open Excel, and sign in with your email and password in the Daedalus ribbon.</p>
+					<a href="#" id="download-btn" class="btn-download" target="_blank">Download Daedalus</a>
+				</div>
+
+			</div>
+		</main>
+
+		<footer>
+			<p>&copy; 2026 Tramuntana Holdings LLC &nbsp;·&nbsp; <a href="mailto:harrison@usedaedalus.com">harrison@usedaedalus.com</a></p>
+		</footer>
+
+		<script>
+			const SUPABASE_URL = 'https://hqblcglbnpurgfwadgvw.supabase.co';
+			const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxYmxjZ2xibnB1cmdmd2FkZ3Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI4NjYsImV4cCI6MjA5MjE5ODg2Nn0.b-aF2Sm4v4HFEvROhXs8IezL84bsA7ksYWFeqY35gr0';
+
+			const { createClient } = supabase;
+			const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+			function showReset() {
+				document.getElementById('signin-state').style.display = 'none';
+				document.getElementById('reset-state').style.display = 'block';
+			}
+
+			function showSignin() {
+				document.getElementById('reset-state').style.display = 'none';
+				document.getElementById('signin-state').style.display = 'block';
+			}
+
+			function clearErrors() {
+				['email', 'password'].forEach(id => {
+					const input = document.getElementById(id);
+					const error = document.getElementById(id + '-error');
+					if (input) input.classList.remove('error-field');
+					if (error) error.classList.remove('visible');
+				});
+				const alert = document.getElementById('alert-box');
+				alert.className = 'alert';
+				alert.textContent = '';
+			}
+
+			function showAlert(id, message, type) {
+				const alert = document.getElementById(id);
+				alert.textContent = message;
+				alert.className = 'alert ' + type;
+			}
+
+			function showFieldError(fieldId, message) {
+				const input = document.getElementById(fieldId);
+				const error = document.getElementById(fieldId + '-error');
+				input.classList.add('error-field');
+				if (message) error.textContent = message;
+				error.classList.add('visible');
+			}
+
+			async function handleSignin() {
+				clearErrors();
+
+				const email = document.getElementById('email').value.trim();
+				const password = document.getElementById('password').value;
+
+				let valid = true;
+				if (!email || !email.includes('@')) { showFieldError('email'); valid = false; }
+				if (!password) { showFieldError('password'); valid = false; }
+				if (!valid) return;
+
+				const btn = document.getElementById('submit-btn');
+				btn.disabled = true;
+				btn.textContent = 'Signing in...';
+
+				try {
+					const { data, error } = await client.auth.signInWithPassword({ email, password });
+
+					if (error) {
+						if (error.message.includes('Invalid login')) {
+							showAlert('alert-box', 'Incorrect email or password. Please try again.', 'error');
+						} else if (error.message.includes('Email not confirmed')) {
+							showAlert('alert-box', 'Please confirm your email address first. Check your inbox for the confirmation link.', 'error');
+						} else {
+							showAlert('alert-box', error.message, 'error');
+						}
+						btn.disabled = false;
+						btn.textContent = 'Sign in';
+						return;
+					}
+
+					// Success - show download
+					document.getElementById('signin-state').style.display = 'none';
+					document.getElementById('download-state').style.display = 'block';
+
+				} catch (err) {
+					showAlert('alert-box', 'Something went wrong. Please try again or contact harrison@usedaedalus.com.', 'error');
+					btn.disabled = false;
+					btn.textContent = 'Sign in';
+				}
+			}
+
+			async function handleReset() {
+				const email = document.getElementById('reset-email').value.trim();
+				const error = document.getElementById('reset-email-error');
+
+				if (!email || !email.includes('@')) {
+					document.getElementById('reset-email').classList.add('error-field');
+					error.classList.add('visible');
+					return;
+				}
+
+				const btn = document.getElementById('reset-btn');
+				btn.disabled = true;
+				btn.textContent = 'Sending...';
+
+				try {
+					const { error: resetError } = await client.auth.resetPasswordForEmail(email, {
+						redirectTo: 'https://usedaedalus.com/signin.html'
+					});
+
+					if (resetError) {
+						showAlert('reset-alert', resetError.message, 'error');
+					} else {
+						showAlert('reset-alert', 'Reset link sent. Check your email.', 'success');
+					}
+				} catch (err) {
+					showAlert('reset-alert', 'Something went wrong. Please try again.', 'error');
+				}
+
+				btn.disabled = false;
+				btn.textContent = 'Send reset link';
+			}
+
+			async function fetchDownloadUrl() {
+				try {
+					const res = await fetch('https://usedaedalus.com/version.json?nocache=' + Date.now());
+					const data = await res.json();
+					const btn = document.getElementById('download-btn');
+					if (data.downloadUrl) {
+						btn.href = data.downloadUrl;
+					}
+				} catch (err) {
+					// Fall back to releases page if fetch fails
+					document.getElementById('download-btn').href = 'https://github.com/Daedalus-App22/Daedalus-Releases/releases/latest';
+				}
+			}
+
+			// Fetch download URL on page load
+			fetchDownloadUrl();
+
+			document.addEventListener('keydown', function(e) {
+				if (e.key === 'Enter') {
+					if (document.getElementById('reset-state').style.display === 'block') {
+						handleReset();
+					} else {
+						handleSignin();
+					}
+				}
+			});
+		</script>
+
+	</body>
+</html>
