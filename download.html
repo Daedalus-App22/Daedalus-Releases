@@ -343,6 +343,57 @@
 				font-weight: 600;
 			}
 
+			/* ── DOWNLOAD STATE ── */
+			#download-state {
+				display: none;
+				text-align: center;
+				padding: 1rem 0;
+			}
+
+			#download-state .success-icon {
+				width: 56px;
+				height: 56px;
+				background: rgba(47,108,255,0.1);
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: 0 auto 1.5rem;
+				font-size: 1.4rem;
+				color: var(--blue);
+			}
+
+			#download-state h3 {
+				font-family: 'Archivo', sans-serif;
+				font-size: 1.3rem;
+				font-weight: 800;
+				color: var(--navy);
+				letter-spacing: -0.03em;
+				margin-bottom: 0.75rem;
+			}
+
+			#download-state p {
+				font-size: 0.92rem;
+				color: var(--text-mid);
+				line-height: 1.7;
+				margin-bottom: 1.5rem;
+			}
+
+			.btn-download {
+				display: inline-block;
+				background: var(--blue);
+				color: var(--white);
+				padding: 0.95rem 2.2rem;
+				border-radius: 4px;
+				font-size: 1rem;
+				font-weight: 600;
+				font-family: 'Inter', sans-serif;
+				text-decoration: none;
+				transition: background 0.2s;
+			}
+
+			.btn-download:hover { background: #1a55ee; }
+
 			/* ── FOOTER ── */
 			footer {
 				background: var(--navy);
@@ -428,8 +479,16 @@
 				<div id="success-state">
 					<div class="success-icon">&#10003;</div>
 					<h3>Check your email.</h3>
-					<p>We sent a confirmation link to <strong id="confirmed-email"></strong>. Click it to verify your account, then come back here to download Daedalus.</p>
+					<p>We sent a confirmation link to <strong id="confirmed-email"></strong>. Click it to verify your account -- you'll be taken straight to your download.</p>
 					<p style="font-size:0.82rem;color:var(--text-light);">Didn't receive it? Check your spam folder or <a href="#" onclick="location.reload()" style="color:var(--blue);">try again</a>.</p>
+				</div>
+
+				<!-- Download state shown after email confirmation -->
+				<div id="download-state">
+					<div class="success-icon">&#8659;</div>
+					<h3>You're confirmed.</h3>
+					<p>Your account is verified. Click below to download Daedalus. Install it, open Excel, and sign in with your email and password in the Daedalus ribbon.</p>
+					<a href="#" id="download-btn" class="btn-download">Download Daedalus</a>
 				</div>
 			</div>
 		</main>
@@ -441,10 +500,44 @@
 		<script>
 			const SUPABASE_URL = 'https://hqblcglbnpurgfwadgvw.supabase.co';
 			const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxYmxjZ2xibnB1cmdmd2FkZ3Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI4NjYsImV4cCI6MjA5MjE5ODg2Nn0.b-aF2Sm4v4HFEvROhXs8IezL84bsA7ksYWFeqY35gr0';
+			const FALLBACK_DOWNLOAD_URL = 'https://github.com/Daedalus-App22/Daedalus-Releases/releases/download/v1.0.1.3/Daedalus.v1.0.1.3.zip';
 
 			const { createClient } = supabase;
 			const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+			// ── Session detection ──────────────────────────────────────────
+			// Handles users who land here after clicking the confirmation email
+			client.auth.onAuthStateChange((event, session) => {
+				if (event === 'SIGNED_IN' && session) {
+					showDownloadState();
+				}
+			});
+
+			// Also check on page load in case session already exists
+			(async function() {
+				const { data: { session } } = await client.auth.getSession();
+				if (session) showDownloadState();
+			})();
+
+			async function fetchDownloadUrl() {
+				try {
+					const res = await fetch('https://usedaedalus.com/version.json?nocache=' + Date.now());
+					const data = await res.json();
+					return data.downloadUrl || FALLBACK_DOWNLOAD_URL;
+				} catch (err) {
+					return FALLBACK_DOWNLOAD_URL;
+				}
+			}
+
+			async function showDownloadState() {
+				document.getElementById('form-state').style.display = 'none';
+				document.getElementById('success-state').style.display = 'none';
+				document.getElementById('download-state').style.display = 'block';
+				const url = await fetchDownloadUrl();
+				document.getElementById('download-btn').href = url;
+			}
+
+			// ── Form helpers ───────────────────────────────────────────────
 			function showError(fieldId, message) {
 				const input = document.getElementById(fieldId);
 				const error = document.getElementById(fieldId + '-error');
@@ -471,6 +564,7 @@
 				alert.className = 'alert ' + type;
 			}
 
+			// ── Signup ─────────────────────────────────────────────────────
 			async function handleSignup() {
 				clearErrors();
 
@@ -497,7 +591,8 @@
 						email: email,
 						password: password,
 						options: {
-							data: { first_name: firstname }
+							data: { first_name: firstname },
+							emailRedirectTo: 'https://usedaedalus.com/download.html'
 						}
 					});
 
@@ -512,7 +607,7 @@
 						return;
 					}
 
-					// Show success state
+					// Show check-your-email state
 					document.getElementById('form-state').style.display = 'none';
 					document.getElementById('confirmed-email').textContent = email;
 					document.getElementById('success-state').style.display = 'block';
@@ -526,7 +621,9 @@
 
 			// Allow Enter key to submit
 			document.addEventListener('keydown', function(e) {
-				if (e.key === 'Enter') handleSignup();
+				if (e.key === 'Enter' && document.getElementById('form-state').style.display !== 'none') {
+					handleSignup();
+				}
 			});
 		</script>
 
