@@ -503,7 +503,9 @@
 			const FALLBACK_DOWNLOAD_URL = 'https://github.com/Daedalus-App22/Daedalus-Releases/releases/download/v1.0.1.3/Daedalus.v1.0.1.3.zip';
 
 			const { createClient } = supabase;
-			const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+			const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+				auth: { persistSession: false }
+			});
 
 			// ── Session detection ──────────────────────────────────────────
 			// Only show download state when arriving via the confirmation email link.
