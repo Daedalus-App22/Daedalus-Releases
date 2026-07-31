@@ -506,18 +506,13 @@
 			const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 			// ── Session detection ──────────────────────────────────────────
-			// Handles users who land here after clicking the confirmation email
+			// Only show download state when arriving via the confirmation email link.
+			// Supabase puts access_token in the URL hash after email confirmation.
 			client.auth.onAuthStateChange((event, session) => {
-				if (event === 'SIGNED_IN' && session) {
+				if (event === 'SIGNED_IN' && session && window.location.hash.includes('access_token')) {
 					showDownloadState();
 				}
 			});
-
-			// Also check on page load in case session already exists
-			(async function() {
-				const { data: { session } } = await client.auth.getSession();
-				if (session) showDownloadState();
-			})();
 
 			async function fetchDownloadUrl() {
 				try {
